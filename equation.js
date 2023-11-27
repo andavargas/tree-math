@@ -78,6 +78,7 @@ class Equation {
 
     treeify_parentheses(expression) {
         // make ['a', '+', '-(', 'b', '+', 'c', ')'] -> ['a', '+', ['-(', 'b', '+', 'c']]
+        // NOTE assumes the last closed parenthesis closes the first open one. BROKEN! TODO
 
         const firstIndexOfOpenParen = expression.findIndex(element => element.includes("("));
         var lastIndexOfClosedParen = expression.length - expression.slice().reverse().indexOf(")");
