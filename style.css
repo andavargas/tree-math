@@ -1,0 +1,10 @@
+#visualization-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+}
+
+#visualization-container > div {
+    margin: 0 10px; /* Add some space between the elements */
+}
