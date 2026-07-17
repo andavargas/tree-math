@@ -1,8 +1,7 @@
 # tree-math — Sympose It, web edition
 
 A vanilla-JavaScript port of **Sympose It**, a 2016 iOS app that visualized
-algebraic manipulation as an interactive tree. No build step, no backend,
-no dependencies — just open `index.html`.
+algebraic manipulation as an interactive tree. Try it here: https://andavargas.github.io/tree-math/
 
 ## What it does
 
