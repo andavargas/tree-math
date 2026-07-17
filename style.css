@@ -1,10 +1,317 @@
-#visualization-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 48px;
+:root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --text: #23262d;
+    --muted: #70757f;
+    --border: #d9dce2;
+    --edge: #b9bec7;
+    --add: #d9534f;
+    --mul: #3d7dd8;
+    --leaf-fill: #ffffff;
+    --leaf-stroke: #9aa0aa;
+    --equals-fill: #ffffff;
+    --equals-stroke: #2c2f36;
+    --ring: #8a8f98;
+    --chip-bg: #eceef2;
 }
 
-#visualization-container > div {
-    margin: 0 10px; /* Add some space between the elements */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #16181d;
+        --panel: #1f2229;
+        --text: #e8eaee;
+        --muted: #9aa0aa;
+        --border: #363b45;
+        --edge: #565c68;
+        --add: #e06663;
+        --mul: #5b93e4;
+        --leaf-fill: #262a32;
+        --leaf-stroke: #7c828e;
+        --equals-fill: #262a32;
+        --equals-stroke: #e8eaee;
+        --ring: #9aa0aa;
+        --chip-bg: #2a2e37;
+    }
 }
+
+* { box-sizing: border-box; }
+
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+header, footer {
+    background: var(--panel);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+footer {
+    border-bottom: none;
+    border-top: 1px solid var(--border);
+}
+
+.title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.subtitle {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+#input-equation, #output-equation {
+    width: 100%;
+    font-size: 18px;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+}
+
+#input-equation:focus {
+    outline: 2px solid var(--mul);
+    border-color: transparent;
+}
+
+.examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.example-chip {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 13px;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--chip-bg);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.example-chip:hover { border-color: var(--mul); }
+
+.message {
+    margin-top: 8px;
+    font-size: 14px;
+    padding: 4px 2px;
+}
+
+.message.hint { color: var(--muted); }
+.message.warn { color: var(--add); }
+
+main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+}
+
+#canvas {
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.output-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.output-row label {
+    font-size: 14px;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.output-row button {
+    font-size: 14px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--chip-bg);
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.output-row button:hover { border-color: var(--mul); }
+
+.btn-divider {
+    align-self: stretch;
+    flex: 0 0 1px;
+    background: var(--border);
+    margin: 2px 2px;
+}
+
+.help {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.help summary { cursor: pointer; }
+
+.help ul {
+    margin: 6px 0 0;
+    padding-left: 20px;
+}
+
+.help li { margin: 3px 0; }
+
+.swatch {
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    line-height: 17px;
+    text-align: center;
+    border-radius: 50%;
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.swatch.add { background: var(--add); }
+.swatch.mul { background: var(--mul); }
+.legend-add { color: var(--add); font-weight: 700; }
+.legend-mul { color: var(--mul); font-weight: 700; }
+
+/* ---------------- SVG tree ---------------- */
+
+.edge {
+    stroke: var(--edge);
+    stroke-width: 2;
+}
+
+.node-circle {
+    stroke-width: 2;
+}
+
+.node.add .node-circle { fill: var(--add); stroke: var(--add); }
+.node.mul .node-circle { fill: var(--mul); stroke: var(--mul); }
+.node.leaf .node-circle { fill: var(--leaf-fill); stroke: var(--leaf-stroke); }
+
+.node-label {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    fill: var(--text);
+    pointer-events: none;
+}
+
+.node.add .node-label, .node.mul .node-label {
+    fill: #fff;
+    font-weight: 700;
+}
+
+.slash { cursor: pointer; }
+
+.slash-halo {
+    stroke: var(--panel);
+    stroke-width: 8;
+    stroke-linecap: round;
+}
+
+.slash-stroke {
+    stroke-width: 4;
+    stroke-linecap: round;
+}
+
+.slash-stroke.add { stroke: var(--add); }
+.slash-stroke.mul { stroke: var(--mul); }
+
+.slash-stroke.selected { stroke-width: 5.5; }
+
+.slash-selected-ring {
+    fill: none;
+    stroke-width: 2;
+}
+
+.slash-selected-ring.add { stroke: var(--add); }
+.slash-selected-ring.mul { stroke: var(--mul); }
+
+.hit {
+    fill: transparent;
+    stroke: none;
+}
+
+.no-pointer { pointer-events: none; }
+
+.equals { cursor: pointer; }
+
+.equals-circle {
+    fill: var(--equals-fill);
+    stroke: var(--equals-stroke);
+    stroke-width: 2.5;
+}
+
+.equals-select-ring {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 4;
+}
+
+.equals-label {
+    font-size: 22px;
+    font-weight: 700;
+    fill: var(--text);
+    pointer-events: none;
+}
+
+.spot circle {
+    fill: var(--panel);
+    fill-opacity: 0.85;
+    stroke: var(--ring);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+}
+
+.spot.dimmed { opacity: 0.25; }
+
+.blocked-spot { fill: transparent; }
+
+.trail-line {
+    stroke: #fff;
+    stroke-width: 2.5;
+    stroke-dasharray: 6 5;
+    stroke-linecap: round;
+    opacity: 0.95;
+}
+
+.trail-line.side {
+    stroke-width: 2;
+    stroke-dasharray: 4 5;
+    opacity: 0.8;
+}
+
+.trail-line.side.add { stroke: var(--add); }
+.trail-line.side.mul { stroke: var(--mul); }
+
+.previewing .slash { cursor: default; }
+.previewing .slash.placeable { cursor: pointer; }
+
+.slash-stroke.appearing { stroke-width: 6; }
+
+#output-equation.previewing { opacity: 0.6; font-style: italic; }

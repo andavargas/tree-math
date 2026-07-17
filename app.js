@@ -1,104 +1,115 @@
-document.addEventListener('DOMContentLoaded', (event) => {
-    const inputEquation = document.getElementById('input-equation');
-    const visualizationContainer = document.getElementById('visualization-container');
+/* app.js — wires the input bar, tree view, and output box together. */
+"use strict";
 
-    inputEquation.addEventListener('input', function() {
-        const equation = inputEquation.value;
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('input-equation');
+    const output = document.getElementById('output-equation');
+    const message = document.getElementById('message');
+    const useBtn = document.getElementById('use-btn');
+    const flipBtn = document.getElementById('flip-btn');
+    const recenterBtn = document.getElementById('recenter-btn');
+    const examplesBox = document.getElementById('examples');
+    const svg = document.getElementById('canvas');
 
-        const isValid = checkIfValid(equation);
-        console.log("isValid:", isValid);
-        if (isValid == 'valid') {
-            // Create an instance of Equation with a sample equation
-            let sampleEquation = new Equation(equation, true);
-            console.log("right side: ", sampleEquation.r);
-            updateVisualization(sampleEquation);
-        }
+    let graph = null;
+    let noticeTimer = null;
+
+    const view = new TreeView(svg, {
+        onChange: updateOutput,
+        onNotice: (msg) => showMessage(msg, 'warn'),
+        onPreview: (previewGraph) => {
+            const g = previewGraph || graph;
+            output.value = g ? g.serialize() : '';
+            output.classList.toggle('previewing', !!previewGraph);
+        },
     });
 
-    function checkIfValid(text) {
-        let returnString = "valid";
-    
-        // Check if number and distribution of equals and parentheses is good
-        let nEqualsSign = 0;
-        let nOpenParen = 0;
-        let nCloseParen = 0;
-        for (let char of text) {
-            if (char === "=") {
-                nEqualsSign++;
-                if (nOpenParen !== nCloseParen) {
-                    returnString = "Please use balanced parentheses ().";
-                    break;
-                }
-            }
-            if (char === "(") { nOpenParen++; }
-            if (char === ")") { nCloseParen++; }
-            if (char === "|") { // | is reserved for later
-                returnString = "| is not allowed";
-            }
-    
-            if (nOpenParen < nCloseParen) {
-                returnString = "Please use balanced parentheses ().";
-                break;
-            }
+    function showMessage(text, cls) {
+        clearTimeout(noticeTimer);
+        message.textContent = text;
+        message.className = `message ${cls}`;
+        message.hidden = false;
+        if (cls === 'warn') {
+            noticeTimer = setTimeout(() => { message.hidden = true; }, 3500);
         }
-    
-        if (nEqualsSign !== 1) { returnString = "Please use one and only one equals =."; }
-        if (nOpenParen !== nCloseParen) { returnString = "Please use balanced parentheses ()."; }
-        if (text.startsWith("=")) { returnString = "Equations do not start with an equals =."; }
-        if (text.endsWith("=")) { returnString = "Equations do not end with an equals =."; }
-        if (text.startsWith("+")) { returnString = "Equations do not start with a plus +."; }
-        if (text.endsWith("+")) { returnString = "Equations do not end with a plus +."; }
-        if (text.endsWith("-")) { returnString = "Equations do not end with a minus -."; }
-        if (text.startsWith("*")) { returnString = "Equations do not start with a times *."; }
-        if (text.endsWith("*")) { returnString = "Equations do not end with a times *."; }
-        if (text.endsWith("/")) { returnString = "Equations do not end with a slash /."; }
-    
-        // Check if there are disallowed pairs of characters
-        const disallowedPairs = ["(+", "(*", "+)", "-)", "*)", "/)", "()", "++", "+*", "-+", "--", "-*", "*+", "**", "*/", "/+", "/*", "//", "+=", "-=", "*=", "/=", "(=", "=+", "=)"];
-        // "+-", "+/", "-/", "*-", "/-", "=-", "=/" // these are allowed
-        for (const pair of disallowedPairs) {
-            if (text.includes(pair)) {
-                returnString = `${pair} is not allowed.`;
-                break;
-            }
-        }
-    
-        let nMathChars = 0;
-        const mathChars = ["=", "+", "*", "-", "/", "(", ")", "{", "}", "[", "]"];
-        for (let char of text) {
-            if (mathChars.includes(char)) {
-                nMathChars++;
-            }
-        }
-    
-        if (nMathChars > 15 || text.length > 100) {
-            returnString = "Please use a shorter equation.";
-        }
-    
-        return returnString;
     }
-    
-    function updateVisualization(equation) {
-        // Clear the previous visualization
-        visualizationContainer.innerHTML = '';
-    
-        // Create divs for the left constituent and equals sign
-        const leftDiv = document.createElement('div');
-        leftDiv.id = 'left-constituent';
-        leftDiv.textContent = equation.l.toString();
-        console.log("left side: " + equation.l);
 
-        const equalsDiv = document.createElement('div');
-        equalsDiv.id = 'equals';
-        equalsDiv.textContent = '=';
-
-        const rightDiv = document.createElement('div');
-        rightDiv.id = 'right-constituent';
-        rightDiv.textContent = equation.r.toString();
-
-        // Append the created divs to the visualization container
-        visualizationContainer.appendChild(leftDiv);
-        visualizationContainer.appendChild(equalsDiv);
-        visualizationContainer.appendChild(rightDiv);
+    function hideMessage() {
+        clearTimeout(noticeTimer);
+        message.hidden = true;
     }
+
+    function updateOutput() {
+        output.value = graph ? graph.serialize() : '';
+    }
+
+    function syncUrl() {
+        try {
+            const url = new URL(window.location);
+            url.searchParams.set('eq', input.value);
+            history.replaceState(null, '', url);
+        } catch (_) { /* e.g. file:// in some browsers — the app works without it */ }
+    }
+
+    function rebuild() {
+        try {
+            graph = parseEquation(input.value);
+        } catch (err) {
+            if (err instanceof ParseError) {
+                showMessage(err.message, 'hint');
+                return;
+            }
+            throw err;
+        }
+        hideMessage();
+        view.setGraph(graph);
+        updateOutput();
+        syncUrl();
+    }
+
+    input.addEventListener('input', rebuild);
+
+    flipBtn.addEventListener('click', () => {
+        if (!graph) return;
+        view.flip();
+        updateOutput();
+    });
+
+    recenterBtn.addEventListener('click', () => {
+        if (!graph) return;
+        view.clearSelection();
+        view.layout();
+        view.render();
+        updateOutput();
+    });
+
+    useBtn.addEventListener('click', () => {
+        if (!graph) return;
+        input.value = graph.serialize();
+        rebuild();
+    });
+
+    const examples = [
+        { eq: 'x + y = z', tip: 'A simple sum — click the = sign and move it next to x to solve for x.' },
+        { eq: 'y - 1/x = 1', tip: 'Subtraction and division stacked on one branch: the x carries both slashes.' },
+        { eq: 'a*b = c + d', tip: 'A product on one side, a sum on the other — the = can cross both kinds of node.' },
+        { eq: '-(x + y) = z', tip: 'A negated group — click the minus and push it through the + node to distribute it.' },
+        { eq: '2(b + c) = d*e', tip: 'Implicit multiplication: 2(b+c) means 2*(b+c).' },
+    ];
+    for (const { eq, tip } of examples) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'example-chip';
+        btn.textContent = eq;
+        btn.title = tip;
+        btn.addEventListener('click', () => {
+            input.value = eq;
+            rebuild();
+        });
+        examplesBox.appendChild(btn);
+    }
+
+    const urlEq = new URLSearchParams(window.location.search).get('eq');
+    input.value = urlEq || examples[0].eq;
+    rebuild();
 });

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sympose It — algebra tree visualizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="title-row">
+            <h1>Sympose It</h1>
+            <span class="subtitle">click the equals sign to solve</span>
+        </div>
+        <input id="input-equation" type="text" spellcheck="false" autocomplete="off"
+               placeholder="e.g. y - 1/x = 1" aria-label="Equation input">
+        <div id="examples" class="examples"></div>
+        <div id="message" class="message" hidden></div>
+    </header>
+
+    <main>
+        <svg id="canvas" role="img" aria-label="Equation tree"></svg>
+    </main>
+
+    <footer>
+        <div class="output-row">
+            <label for="output-equation">Result</label>
+            <input id="output-equation" type="text" readonly aria-label="Rearranged equation">
+            <button id="recenter-btn" type="button" title="Re-draw the tree around the equals sign">Recenter</button>
+            <button id="flip-btn" type="button" title="Swap the left and right sides of the equation">Flip</button>
+            <span class="btn-divider" aria-hidden="true"></span>
+            <button id="use-btn" type="button" title="Copy the result back into the input">Use</button>
+        </div>
+        <details class="help">
+            <summary>How it works</summary>
+            <ul>
+                <li><span class="swatch add">+</span> joins terms of a sum; <span class="swatch mul">×</span> joins factors of a product.</li>
+                <li>A <span class="legend-add">red \</span> on a branch means that piece is <em>subtracted</em>; a <span class="legend-mul">blue /</span> means it is <em>divided by</em>.</li>
+                <li><strong>Click the = sign</strong> to see every place it can move to. Hover a spot to preview how the inverse slashes would change (the Result box updates too), then click the spot to move the equals sign there and solve for that part of the equation.</li>
+                <li><strong>Click a slash</strong> to see everywhere it can be pushed to, with the same hover preview — e.g. −(x+y) → −x − y, or hopping across the = sign. If a spot holds both kinds, clicking cycles: subtraction, division, none. Moves that would break the math (like pushing ÷ through +) are simply not offered.</li>
+                <li><strong>Recenter</strong> re-draws the tree around the equals sign's current position.</li>
+                <li><strong>Flip</strong> mirrors the whole tree so the left and right sides of the equation trade places — the Result box updates, the equation you typed stays put.</li>
+                <li><strong>Use</strong> copies the Result equation into the input bar at the top, making it the new starting equation to work from.</li>
+            </ul>
+        </details>
+    </footer>
+
+    <script src="tree.js"></script>
+    <script src="view.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
