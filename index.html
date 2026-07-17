@@ -20,15 +20,16 @@
 
     <main>
         <svg id="canvas" role="img" aria-label="Equation tree"></svg>
+        <div class="floating-controls">
+            <button id="recenter-btn" type="button" title="Re-draw the tree around the equals sign">Recenter</button>
+            <button id="flip-btn" type="button" title="Swap the left and right sides of the equation">Flip</button>
+        </div>
     </main>
 
     <footer>
+        <label for="output-equation" class="output-label">Result</label>
         <div class="output-row">
-            <label for="output-equation">Result</label>
             <input id="output-equation" type="text" readonly aria-label="Rearranged equation">
-            <button id="recenter-btn" type="button" title="Re-draw the tree around the equals sign">Recenter</button>
-            <button id="flip-btn" type="button" title="Swap the left and right sides of the equation">Flip</button>
-            <span class="btn-divider" aria-hidden="true"></span>
             <button id="use-btn" type="button" title="Copy the result back into the input">Use</button>
         </div>
         <details class="help">

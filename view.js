@@ -110,6 +110,18 @@ class TreeView {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') this.clearSelection();
         });
+
+        // Re-render whenever the canvas is resized (window resize, the help
+        // panel opening/closing, ...): rebuilding the SVG contents forces a
+        // clean repaint, so no stale image of the old size can linger.
+        // Observe the containing element, not the <svg>: ResizeObserver
+        // watches an svg's *content* bounding box, which never changes when
+        // CSS resizes the element itself.
+        if (typeof ResizeObserver !== 'undefined') {
+            new ResizeObserver(() => {
+                if (this.graph) this.render();
+            }).observe(svg.parentElement || svg);
+        }
     }
 
     setGraph(graph) {
